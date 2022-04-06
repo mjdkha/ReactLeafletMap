@@ -1,32 +1,109 @@
-import { Alert, Button, Modal, Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
-import MapView,{ Callout, MapEvent, Marker } from 'react-native-maps';
-import React, { useEffect, useState} from 'react';
-import * as Location from 'expo-location';
+import {Alert, Button, FlatList, Modal, Pressable, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import * as SQLite from 'expo-sqlite';
+import MapView, { MapEvent, Marker } from 'react-native-maps';
+import * as Location from 'expo-location'
+
+
+
+
+const renderLocation = ({ item }:{item:any}) => {
+  return (
+    <View style={{
+      flexDirection: "row",
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      borderBottomWidth: 1,
+      borderColor: "#ddd",
+    }}>
+      <Text style={{ marginRight: 9 }}>{item.id}</Text>
+      <Text>{item.latitude}</Text>
+      <Text>{item.longitude}</Text>
+      <Text>{item.description}</Text>
+    </View>
+  );
+};
 
 
 
 export default function App() {
-  const [text, setText] = useState("");
-  const[location,setLocation]= useState({
-      latitude: 0,
-      longitude: 0,
-      latitudeDelta: 0,
-      longitudeDelta: 0,
+  const[locationMap,setLocationMap]= useState({
+    latitude: 0,
+    longitude: 0,
+    latitudeDelta: 0,
+    longitudeDelta: 0,
   });
-  
-  const [modalVisible, setModalVisible] = useState(false);
-  const [userInput , setUserInput] = useState("")
-  const [marker , setMarker] = useState([] as any)
-  const onLocationSelect = (event: MapEvent) => {
-    setLocation({
-      latitude: event.nativeEvent.coordinate.latitude,
-      longitude: event.nativeEvent.coordinate.longitude,
-      latitudeDelta: 0.1,
-      longitudeDelta: 0.1,
+  const [location, setLocation] = useState({
+    latitude:0,
+    longitude:0,
+  });
+  const [locations, setLocations] = useState([] as any);
+  const db = SQLite.openDatabase('db.testDb');
+
+
+  const createTables = () => {
+    db.transaction(txn => {
+      txn.executeSql(
+        `CREATE TABLE IF NOT EXISTS locations (id INTEGER PRIMARY KEY AUTOINCREMENT, latitude VARCHAR(100), longitude VARCHAR(100), description VARCHAR(240))`,
+        [],
+        (sqlTxn, res) => {
+          console.log("table locations created successfully");
+        }
+      );
     });
-  }
+   };
+
+   const addLocation = (text:string) => {
+    if (!text) {
+      alert("Enter description");
+      return false;
+    }
+    db.transaction(txn => {
+      txn.executeSql(
+        `INSERT INTO locations (latitude,longitude,description) VALUES (?,?,?)`,
+        [locationMap.latitude,locationMap.longitude,text],
+        (sqlTxn, res) => {
+          console.log(`${location} added successfully`);
+          getLocations();
+          setLocation({
+            latitude:0,
+            longitude:0,
+          })
+        }
+      );
+    });
+  };
+
+  const getLocations = () => {
+    db.transaction(txn => {
+      txn.executeSql(
+        `SELECT * FROM locations ORDER BY id DESC`,
+        [],
+        (sqlTxn, res) => {
+          console.log("locations retrieved successfully");
+          let len = res.rows.length;
+          if (len > 0) {
+            let results = [];
+            for (let i = 0; i < len; i++) {
+              let item = res.rows.item(i);
+              console.log(item)
+              results.push({latitude: item.latitude, longitude:item.longitude, description:item.description});
+            }
+            setLocations(results);
+            
+          }
+        }
+      );
+    });
+  };
 
   useEffect(() => {
+    const create =async ()=>{
+      const createtable= await createTables();
+    }
+    const getLocation = async ()=>{
+      const getLocation= await getLocations();
+    }
 
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -35,7 +112,7 @@ export default function App() {
       }
 
       let location = await Location.getCurrentPositionAsync({});
-      setLocation({
+      setLocationMap({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
         latitudeDelta: 0.1,
@@ -43,59 +120,89 @@ export default function App() {
       });
     })();
 
+    create()
+    getLocation()
   }, []);
+
+ 
+
+const [modalVisible, setModalVisible] = useState(false);
+const onLocationSelect = (event: MapEvent) => {
+  setLocationMap({
+    latitude: event.nativeEvent.coordinate.latitude,
+    longitude: event.nativeEvent.coordinate.longitude,
+    latitudeDelta: 0.1,
+    longitudeDelta: 0.1,
+  });
+}
+
+// function saveLocationToDb(text: string): void {
+
+//   setModalVisible(false)
+// }
+
+
+
+
   return (
-    <View style={styles.container}>
+    // <View style={styles.container}>
+    //  <StatusBar backgroundColor="#222" />
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => {
-          Alert.alert("Modal has been closed.");
-          setModalVisible(!modalVisible);
-        }}
+    // <TextInput
+    //   placeholder="Enter Description"   
+    //   onSubmitEditing={(event)=>addLocation(event.nativeEvent.text)}
+    //   style={{ marginHorizontal: 8 }}
+    // />
+
+    // <FlatList
+    //   data={locations}
+    //   renderItem={renderLocation}
+    // />
+    // </View>
+
+<View style={styles.container}>
+
+<Modal
+  animationType="slide"
+  transparent={true}
+  visible={modalVisible}
+  onRequestClose={() => {
+    Alert.alert("Modal has been closed.");
+    setModalVisible(!modalVisible);
+  }}
+>
+  <View style={styles.centeredView}>
+    <View style={styles.modalView}>
+    <Pressable
+        style={[styles.button, styles.buttonClose]}
+        onPress={() => setModalVisible(!modalVisible)}
       >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-          <Pressable
-              style={[styles.button, styles.buttonClose]}
-              onPress={() => setModalVisible(!modalVisible)}
-            >
-            <Text style={styles.textStyle}>X</Text>
-            </Pressable>
-            <Text style={styles.modalText}>Entre votre description : </Text>
-            <TextInput
-              style={styles.input}
-              value={text}
-              placeholder="description"
-              onChangeText={setText}
-              />
-
-<Text style={styles.modalText}>votre Latitude est : 122045745</Text>
-<Text style={styles.modalText}>votre longitude : 12836465</Text>
-          </View>
+      <Text style={styles.textStyle}>X</Text>
+      </Pressable>
+      <Text style={styles.modalText}>Entre votre description : </Text>
+      <TextInput
+        style={styles.input}
+        placeholder="description"
+        onSubmitEditing={(event) => addLocation(event.nativeEvent.text)}
+        />
+      <Text style={styles.modalText}>Latitude est : {locationMap.latitude}</Text>
+      <Text style={styles.modalText}>longitude : {locationMap.longitude}</Text>
         </View>
-      </Modal>
+      </View>
+    </Modal>
 
 
 
-      <MapView
-        style={{ alignSelf: 'stretch', height: '100%' }}
-        region={location}
-        onPress={onLocationSelect}
-      >
-   
-            
-   
-    <Marker coordinate={location} onPress={() => setModalVisible(true)} >
+  <MapView
+  style={{ alignSelf: 'stretch', height: '100%' }}
+  region={locationMap}
+  onPress={onLocationSelect}
+>
 
-    <Callout tooltip={true} >
-      
-      </Callout>
-      </Marker>
-      </MapView>
-    </View>
+  <Marker coordinate={locationMap} onPress={() => setModalVisible(true)} >
+  </Marker>
+  </MapView>
+</View>
   );
 }
 
@@ -159,4 +266,5 @@ const styles = StyleSheet.create({
     textAlign: "center"
   }
 });
+
 
