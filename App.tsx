@@ -6,8 +6,9 @@ import * as Location from 'expo-location';
 
 
 export default function App() {
+  const [text, setText] = useState("");
   const[location,setLocation]= useState({
-    latitude: 0,
+      latitude: 0,
       longitude: 0,
       latitudeDelta: 0,
       longitudeDelta: 0,
@@ -24,18 +25,29 @@ export default function App() {
       longitudeDelta: 0.1,
     });
   }
+
+  useEffect(() => {
+
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      setLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.1,
+        longitudeDelta: 0.1,
+      });
+    })();
+
+  }, []);
   return (
     <View style={styles.container}>
-      <MapView
-        style={{ alignSelf: 'stretch', height: '100%' }}
-        region={location}
-        onPress={onLocationSelect}
-      >
-    
-    <Marker coordinate={location} >
 
-<Callout style={{ alignSelf: 'stretch', height: '100%' }}>
-<Modal
+      <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
@@ -46,23 +58,40 @@ export default function App() {
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <Text style={styles.modalText}>Hello World!</Text>
-            <Pressable
+          <Pressable
               style={[styles.button, styles.buttonClose]}
               onPress={() => setModalVisible(!modalVisible)}
             >
-              <Text style={styles.textStyle}>Hide Modal</Text>
+            <Text style={styles.textStyle}>X</Text>
             </Pressable>
+            <Text style={styles.modalText}>Entre votre description : </Text>
+            <TextInput
+              style={styles.input}
+              value={text}
+              placeholder="description"
+              onChangeText={setText}
+              />
+
+<Text style={styles.modalText}>votre Latitude est : 122045745</Text>
+<Text style={styles.modalText}>votre longitude : 12836465</Text>
           </View>
         </View>
       </Modal>
 
-      <Pressable
-        style={[styles.button, styles.buttonOpen]}
-        onPress={() => setModalVisible(true)}
+
+
+      <MapView
+        style={{ alignSelf: 'stretch', height: '100%' }}
+        region={location}
+        onPress={onLocationSelect}
       >
+   
             
-      </Pressable>
+   
+    <Marker coordinate={location} onPress={() => setModalVisible(true)} >
+
+    <Callout tooltip={true} >
+      
       </Callout>
       </Marker>
       </MapView>
@@ -71,22 +100,28 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  input: {
+    height: 40,
+    margin: 12,
+    borderWidth: 1,
+    padding: 10,
+  },
   container: {
     flex: 1,
   },
 
   centeredView: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 22
+    // flex: 1,
+    // justifyContent: "center",
+    // alignItems: "center",
+    marginTop: 100
   },
   modalView: {
     margin: 20,
     backgroundColor: "white",
     borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
+    padding: 25,
+    // alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -99,13 +134,20 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: 20,
     padding: 10,
-    elevation: 2
+    elevation: 2,
+    alignSelf:'flex-end'
+    
   },
   buttonOpen: {
     backgroundColor: "#F194FF",
   },
   buttonClose: {
-    backgroundColor: "#2196F3",
+    backgroundColor: "black",
+    alignItems:'center',
+    textAlign:'center',
+    width:'20%',
+    
+    
   },
   textStyle: {
     color: "white",
