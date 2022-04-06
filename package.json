@@ -12,10 +12,14 @@
   "dependencies": {
     "expo": "~44.0.0",
     "expo-status-bar": "~1.2.0",
-    "react": "17.0.1",
-    "react-dom": "17.0.1",
+    "leaflet": "^1.7.1",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-leaflet": "^3.2.5",
     "react-native": "0.64.3",
-    "react-native-web": "0.17.1"
+    "react-native-leaflet-view": "^0.1.2",
+    "react-native-web": "0.17.1",
+    "react-native-webview-leaflet": "^5.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",
