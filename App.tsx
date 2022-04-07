@@ -3,30 +3,79 @@ import React, { useEffect, useState } from 'react';
 import * as SQLite from 'expo-sqlite';
 import MapView, { MapEvent, Marker } from 'react-native-maps';
 import * as Location from 'expo-location'
-
-
-
-
-const renderLocation = ({ item }:{item:any}) => {
-  return (
-    <View style={{
-      flexDirection: "row",
-      paddingVertical: 12,
-      paddingHorizontal: 10,
-      borderBottomWidth: 1,
-      borderColor: "#ddd",
-    }}>
-      <Text style={{ marginRight: 9 }}>{item.id}</Text>
-      <Text>{item.latitude}</Text>
-      <Text>{item.longitude}</Text>
-      <Text>{item.description}</Text>
-    </View>
-  );
-};
+import NetInfo from '@react-native-community/netinfo'
 
 
 
 export default function App() {
+  const [connectStatus, setConnectStatus]=useState(false)
+  const checkConnected=()=>{
+    return NetInfo.fetch().then(state=>{
+      console.log('Connection type', state.type)
+      console.log('Is Connected', state.isConnected)
+      return state.isConnected
+    })
+  }
+  checkConnected().then((res:any)=>{
+    setConnectStatus(res)
+  })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   const[locationMap,setLocationMap]= useState({
     latitude: 0,
     longitude: 0,
@@ -64,6 +113,7 @@ export default function App() {
         [locationMap.latitude,locationMap.longitude,text],
         (sqlTxn, res) => {
           console.log(`${location} added successfully`);
+          setModalVisible(false)
           getLocations();
           setLocation({
             latitude:0,
@@ -136,32 +186,13 @@ const onLocationSelect = (event: MapEvent) => {
   });
 }
 
-// function saveLocationToDb(text: string): void {
-
-//   setModalVisible(false)
-// }
 
 
 
 
   return (
-    // <View style={styles.container}>
-    //  <StatusBar backgroundColor="#222" />
 
-    // <TextInput
-    //   placeholder="Enter Description"   
-    //   onSubmitEditing={(event)=>addLocation(event.nativeEvent.text)}
-    //   style={{ marginHorizontal: 8 }}
-    // />
-
-    // <FlatList
-    //   data={locations}
-    //   renderItem={renderLocation}
-    // />
-    // </View>
-
-<View style={styles.container}>
-
+<View style={styles.container}> 
 <Modal
   animationType="slide"
   transparent={true}
@@ -201,7 +232,7 @@ const onLocationSelect = (event: MapEvent) => {
 
   <Marker coordinate={locationMap} onPress={() => setModalVisible(true)} >
   </Marker>
-  </MapView>
+  </MapView> 
 </View>
   );
 }
@@ -218,9 +249,6 @@ const styles = StyleSheet.create({
   },
 
   centeredView: {
-    // flex: 1,
-    // justifyContent: "center",
-    // alignItems: "center",
     marginTop: 100
   },
   modalView: {
@@ -228,7 +256,6 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 20,
     padding: 25,
-    // alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
